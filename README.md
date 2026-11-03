@@ -105,41 +105,24 @@ the classifier. Metrics below are computed on the held-out **test set**.
 
  
 
-| ML Model Name | Accuracy | AUC | Precision | Recall | F1 | MCC |
-
-| --- | --- | --- | --- | --- | --- | --- |
-
+| Model | Accuracy | AUC | Precision | Recall | F1 | MCC |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Logistic Regression | 0.9294 | 0.9702 | 0.9209 | 0.8981 | 0.9093 | 0.8518 |
-
 | Decision Tree | 0.9110 | 0.9078 | 0.8828 | 0.8926 | 0.8877 | 0.8140 |
-
 | KNN | 0.9077 | 0.9506 | 0.8861 | 0.8788 | 0.8824 | 0.8065 |
-
-| Naive Bayes | 0.8328 | 0.9377 | 0.7146 | 0.9587 | 0.8188 | 0.6946 |
-
+| Naive Bayes | 0.8328 | 0.9376 | 0.7146 | 0.9587 | 0.8188 | 0.6946 |
 | Support Vector Machine | 0.9273 | 0.9667 | 0.9277 | 0.8843 | 0.9055 | 0.8471 |
-
- 
 
 ### Observations about model performance
 
- 
-
-| ML Model Name | Observation about model performance |
-
+| Model | Performance observation |
 | --- | --- |
-
-| Logistic Regression | **Best overall.** The spam features are high-dimensional and close to linearly separable, which suits a linear model. It scores highest on Accuracy, AUC, F1 and MCC with a well-balanced precision/recall. |
-
-| Decision Tree | Reasonable accuracy and the most interpretable model, but the **lowest AUC (0.9078)** because a single tree produces coarse probability estimates and tends to overfit the training data. |
-
-| KNN | Solid results after scaling (Accuracy 0.9077, AUC 0.9506). It is sensitive to feature scaling (handled by the pipeline) and is the slowest at prediction time because it compares every test point to all training points. |
-
-| Naive Bayes | **Lowest accuracy and precision** because its "features are independent" assumption is violated — word frequencies are strongly correlated. However it has the **highest recall (0.9587)**: it catches almost all spam, at the cost of more false positives (flagging genuine mail as spam). |
-
-| Support Vector Machine | **Very close second** to Logistic Regression and the **highest precision (0.9277)**. Strong AUC and F1. The main trade-off is higher training/prediction cost. |
-
-| **Overall winner for this dataset** | **Logistic Regression** — top Accuracy, AUC, F1 and MCC, with balanced precision and recall, and it is fast and simple. |
+| Logistic Regression | **Best overall.** The spam features are high-dimensional and close to linearly separable, which suits a linear model. It scores highest on Accuracy, AUC, F1 and MCC with balanced precision and recall. |
+| Decision Tree | Interpretable with reasonable accuracy, but has the **lowest AUC (0.9078)**. A single tree can produce coarse probability estimates and may overfit. |
+| KNN | Performs well after scaling (Accuracy 0.9077, AUC 0.9506). It is sensitive to feature scaling and slower at prediction because it compares each test point with the training data. |
+| Naive Bayes | **Lowest accuracy and precision**, likely because word-frequency features are correlated. It has the **highest recall (0.9587)**, catching most spam at the cost of more false positives. |
+| Support Vector Machine | A close second to Logistic Regression and has the **highest precision (0.9277)**. It has strong AUC and F1, with higher training and prediction cost. |
+| **Overall winner** | **Logistic Regression** leads in Accuracy, AUC, F1 and MCC, with balanced precision and recall. |
 
  
 
@@ -197,27 +180,19 @@ ML_assignment_2/
 
 python -m venv .venv
 
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-
- 
+source .venv/bin/activate        # Windows: .venv\\Scripts\\activate
 
 # 2. Install the exact dependencies
 
 pip install -r requirements.txt
 
- 
-
 # 3. (Optional) re-train the models — this regenerates model/ and test_data.csv
 
 python train_models.py
 
- 
-
 # 4. Launch the web app
 
 streamlit run app.py
-
- 
 
 Then open the URL shown in the terminal, upload `test_data.csv`, choose a model,
 
