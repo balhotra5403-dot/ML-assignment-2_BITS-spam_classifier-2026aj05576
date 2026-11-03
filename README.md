@@ -12,13 +12,12 @@ serves the results through an interactive **Streamlit** web application.
 
  
 
-> Replace the two links below before submitting.
 
 > 
 
-> - **GitHub Repository:** <PASTE_YOUR_GITHUB_REPO_LINK_HERE>
+> - **GitHub Repository:** https://github.com/balhotra5403-dot/ML-assignment-2_BITS-spam_classifier-2026aj05576/tree/main/model
 
-> - **Live Streamlit App:** <PASTE_YOUR_STREAMLIT_APP_LINK_HERE>
+> - **Live Streamlit App:** 
 
  
 
@@ -90,7 +89,7 @@ The requirements (≥ 12 features and ≥ 500 instances) are comfortably met:
 
  
 
-<PASTE_YOUR_GITHUB_REPO_LINK_HERE>
+https://github.com/balhotra5403-dot/ML-assignment-2_BITS-spam_classifier-2026aj05576
 
  
 
