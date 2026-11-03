@@ -17,7 +17,7 @@ serves the results through an interactive **Streamlit** web application.
 
 > - **GitHub Repository:** https://github.com/balhotra5403-dot/ML-assignment-2_BITS-spam_classifier-2026aj05576/tree/main/model
 
-> - **Live Streamlit App:** 
+> - **Live Streamlit App:** https://apcnokzzu3ccv7h6hhmbi2.streamlit.app 
 
  
 
