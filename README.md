@@ -193,22 +193,29 @@ ML_assignment_2/
 
 ## How to run locally
 
-Python 3.14 is recommended. The saved model files were trained with the versions pinned in `requirements.txt`; if you change those versions, re-run training to regenerate `model/`.
+# 1. Create and activate a virtual environment (Python 3.11 recommended)
 
-```bash
-# Create and activate a virtual environment
-python3.14 -m venv .venv
+python -m venv .venv
+
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 
-# Install dependencies
-python -m pip install -r requirements.txt
+ 
 
-# Optional: re-train the models and regenerate test_data.csv
+# 2. Install the exact dependencies
+
+pip install -r requirements.txt
+
+ 
+
+# 3. (Optional) re-train the models — this regenerates model/ and test_data.csv
+
 python train_models.py
 
-# Launch the web app
+ 
+
+# 4. Launch the web app
+
 streamlit run app.py
-```
 
  
 
