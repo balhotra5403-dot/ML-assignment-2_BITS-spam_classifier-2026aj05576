@@ -176,21 +176,21 @@ ML_assignment_2/
 
 ## How to run locally
 
-# 1. Create and activate a virtual environment (Python 3.11 recommended)
+**1. Create and activate a virtual environment (Python 3.11 recommended)**
 
 python -m venv .venv
 
 source .venv/bin/activate        # Windows: .venv\\Scripts\\activate
 
-# 2. Install the exact dependencies
+**2. Install the exact dependencies**
 
 pip install -r requirements.txt
 
-# 3. (Optional) re-train the models — this regenerates model/ and test_data.csv
+**3. (Optional) re-train the models — this regenerates model/ and test_data.csv**
 
 python train_models.py
 
-# 4. Launch the web app
+**4. Launch the web app**
 
 streamlit run app.py
 
