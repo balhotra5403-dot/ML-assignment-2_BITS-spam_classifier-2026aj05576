@@ -1,0 +1,10 @@
+# Python 3.14-compatible pins. Retrain models with these versions before deploy.
+streamlit==1.66.1
+scikit-learn==1.9.1
+numpy==2.5.4
+pandas==3.1.0
+matplotlib==3.11.2
+seaborn==0.13.2
+joblib==1.6.0
+scipy==1.18.1
+pyarrow==26.0.1
