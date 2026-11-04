@@ -493,7 +493,6 @@ def main():
  
 
     # A mapping from display name to the file name we save the model under.
-
     model_files = {
 
         "Logistic Regression": "logistic_regression.joblib",
@@ -520,7 +519,7 @@ def main():
 
     for name, model in models.items():
 
-        print("\nTraining: %s ..." % name)
+        print("\nTraining %s model..." % name)
 
         model.fit(X_train, y_train)                 # learn from the train set
 
