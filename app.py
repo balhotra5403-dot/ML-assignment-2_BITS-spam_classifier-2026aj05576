@@ -1,4 +1,4 @@
-# =============================================================================
+ =============================================================================
 
 #  app.py  -  Streamlit web application
 
@@ -318,19 +318,93 @@ def plot_confusion_matrix(y_true, y_pred):
 
 # =============================================================================
 
+#  EXTRA HELPERS FOR THE ENHANCED UI
+
+# =============================================================================
+
+ 
+
+@st.cache_data
+
+def load_sample_data():
+
+    """Load the bundled test_data.csv so users can preview/download a sample."""
+
+    path = os.path.join(HERE, "test_data.csv")
+
+    if os.path.exists(path):
+
+        return pd.read_csv(path)
+
+    return None
+
+ 
+
+def plot_metrics_comparison(results_df):
+
+    """Grouped bar chart comparing all six metrics across every model."""
+
+    metrics_order = ["Accuracy", "AUC", "Precision", "Recall", "F1", "MCC"]
+
+    fig, ax = plt.subplots(figsize=(10, 4.6))
+
+    n_models = len(results_df)
+
+    n_metrics = len(metrics_order)
+
+    x = np.arange(n_models)          # one group of bars per model
+
+    width = 0.13                     # width of each individual bar
+
+    for i, metric in enumerate(metrics_order):
+
+        offset = (i - n_metrics / 2) * width + width / 2
+
+        ax.bar(x + offset, results_df[metric].values, width, label=metric)
+
+    ax.set_xticks(x)
+
+    ax.set_xticklabels(results_df.index, rotation=20, ha="right")
+
+    ax.set_ylim(0, 1.08)
+
+    ax.set_ylabel("Score")
+
+    ax.set_title("Evaluation metrics by model")
+
+    ax.legend(ncol=6, fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.18))
+
+    ax.grid(axis="y", linestyle="--", alpha=0.4)
+
+    fig.tight_layout()
+
+    return fig
+
+ 
+
+# =============================================================================
+
 #  PAGE LAYOUT
 
 # =============================================================================
 
  
 
-# Set the browser tab title and use a wide layout.
+# Set the browser tab title/icon and use a wide layout.
 
-st.set_page_config(page_title="Spam Classifier - ML Assignment 2", layout="wide")
+st.set_page_config(
+
+    page_title="Spam Classifier - ML Assignment 2",
+
+    page_icon="\U0001F4E7",          # envelope icon in the browser tab
+
+    layout="wide",
+
+)
 
  
 
-st.title("Spam E-mail Classification - Model Evaluation App")
+st.title("\U0001F4E7 Spam E-mail Classification - Model Evaluation App")
 
 st.write(
 
@@ -349,6 +423,8 @@ st.write(
 # Load the metadata once (feature names, model file map, reference metrics).
 
 feature_names, model_files, reference_metrics = load_metadata()
+
+sample_df = load_sample_data()       # bundled test data for preview/download
 
  
 
@@ -384,11 +460,43 @@ model_choice = st.sidebar.selectbox(
 
  
 
+# ---- Download sample data so a first-time user has something to upload -------
+
+st.sidebar.header("3. Need a sample file?")
+
+if sample_df is not None:
+
+    st.sidebar.download_button(
+
+        "\u2B07\uFE0F Download sample test data (25 rows)",
+
+        data=sample_df.head(25).to_csv(index=False).encode("utf-8"),
+
+        file_name="sample_test_data.csv",
+
+        mime="text/csv",
+
+        use_container_width=True,
+
+    )
+
+    st.sidebar.download_button(
+
+        "\u2B07\uFE0F Download full test data (%d rows)" % len(sample_df),
+
+        data=sample_df.to_csv(index=False).encode("utf-8"),
+
+        file_name="test_data.csv",
+
+        mime="text/csv",
+
+        use_container_width=True,
+
+    )
+
 st.sidebar.caption(
 
-    "Tip: use the provided **test_data.csv** from the repository. It already "
-
-    "contains all required feature columns plus the 'target' label."
+    "Tip: download a sample above, then upload it to see the app in action."
 
 )
 
@@ -396,195 +504,349 @@ st.sidebar.caption(
 
 # -----------------------------------------------------------------------------
 
-#  MAIN AREA  -  reacts to what the user uploaded / selected
+#  MAIN PAGE  -  single scrollable page:
+
+#     Section 1 (top):    Model evaluation + graphs
+
+#     Section 2 (below):  Dataset description & sample
 
 # -----------------------------------------------------------------------------
 
  
 
-# If no file has been uploaded yet, show a friendly instruction and stop.
+# ======================= SECTION 1: MODEL EVALUATION ========================
+
+st.header("\U0001F916 Model Evaluation")
+
+ 
 
 if uploaded_file is None:
 
-    st.info("Please upload a test CSV file from the sidebar to begin.")
+    st.info(
 
-    # Show the reference metrics (measured during training) so the page is not
+        "Please upload a test CSV from the sidebar (or download a sample "
 
-    # empty - this is purely informational.
+        "first). Meanwhile, here are the reference metrics from training."
 
-    st.subheader("Reference metrics (measured on the hold-out test set during training)")
+    )
 
     ref_df = pd.DataFrame(reference_metrics).T.round(4)
 
+    st.subheader("Reference metrics (hold-out test set, during training)")
+
     st.dataframe(ref_df, use_container_width=True)
 
-    st.stop()   # nothing more to do until a file is uploaded
+    # A graph of the reference metrics so the page is informative even before upload.
 
- 
+    st.subheader("Reference metrics - visual comparison")
 
-# Read the uploaded CSV into a DataFrame.
-
-try:
-
-    data = pd.read_csv(uploaded_file)
-
-except Exception as exc:
-
-    st.error("Could not read the uploaded file as CSV: %s" % exc)
-
-    st.stop()
-
- 
-
-st.subheader("Preview of uploaded data")
-
-st.write("Shape: %d rows x %d columns" % (data.shape[0], data.shape[1]))
-
-st.dataframe(data.head(), use_container_width=True)
-
- 
-
-# Validate the file and split into features / label.
-
-X, y, error = validate_and_split(data, feature_names)
-
-if error is not None:
-
-    st.error(error)
-
-    st.stop()
-
- 
-
-st.success("File looks good: %d rows ready for evaluation." % len(X))
-
- 
-
-# -----------------------------------------------------------------------------
-
-#  CASE 1: Compare ALL models side by side
-
-# -----------------------------------------------------------------------------
-
-if model_choice == "Compare all models":
-
-    st.subheader("Evaluation metrics for all models (on your uploaded test data)")
-
- 
-
-    rows = []
-
-    for display_name, file_name in model_files.items():
-
-        model = load_model(file_name)
-
-        metrics, _ = compute_metrics(model, X, y)
-
-        metrics_row = {"Model": display_name}
-
-        metrics_row.update({k: round(v, 4) for k, v in metrics.items()})
-
-        rows.append(metrics_row)
-
- 
-
-    results_df = pd.DataFrame(rows).set_index("Model")
-
-    # FEATURE (c): display of evaluation metrics (for every model here).
-
-    st.dataframe(results_df, use_container_width=True)
-
- 
-
-    # Highlight the best model by MCC (a balanced single-number score).
-
-    best_model = results_df["MCC"].idxmax()
-
-    st.success("Best model on this data (by MCC): **%s**" % best_model)
-
- 
-
-    # A simple bar chart comparing accuracy across models.
-
-    st.bar_chart(results_df["Accuracy"])
-
- 
-
-# -----------------------------------------------------------------------------
-
-#  CASE 2: Evaluate a SINGLE selected model
-
-# -----------------------------------------------------------------------------
+    st.pyplot(plot_metrics_comparison(ref_df))
 
 else:
 
-    file_name = model_files[model_choice]
+    # Read the uploaded CSV into a DataFrame.
 
-    model = load_model(file_name)
+    data = None
 
-    metrics, y_pred = compute_metrics(model, X, y)
+    try:
 
- 
+        data = pd.read_csv(uploaded_file)
 
-    st.subheader("Evaluation metrics - %s" % model_choice)
+    except Exception as exc:
 
- 
-
-    # FEATURE (c): display of evaluation metrics, shown as six metric cards.
-
-    c1, c2, c3 = st.columns(3)
-
-    c1.metric("Accuracy", "%.4f" % metrics["Accuracy"])
-
-    c2.metric("AUC", "%.4f" % metrics["AUC"])
-
-    c3.metric("Precision", "%.4f" % metrics["Precision"])
-
-    c4, c5, c6 = st.columns(3)
-
-    c4.metric("Recall", "%.4f" % metrics["Recall"])
-
-    c5.metric("F1 Score", "%.4f" % metrics["F1"])
-
-    c6.metric("MCC", "%.4f" % metrics["MCC"])
+        st.error("Could not read the uploaded file as CSV: %s" % exc)
 
  
 
-    # FEATURE (d): confusion matrix AND classification report, side by side.
+    if data is not None:
 
-    st.subheader("Confusion matrix and classification report")
+        st.subheader("Preview of uploaded data")
 
-    left, right = st.columns(2)
+        st.write("Shape: %d rows x %d columns" % (data.shape[0], data.shape[1]))
 
- 
-
-    with left:
-
-        fig = plot_confusion_matrix(y, y_pred)
-
-        st.pyplot(fig)
+        st.dataframe(data.head(), use_container_width=True)
 
  
 
-    with right:
+        # Validate the file and split into features / label.
 
-        # classification_report returns a dict we turn into a tidy table.
+        X, y, error = validate_and_split(data, feature_names)
 
-        report = classification_report(
+        if error is not None:
 
-            y, y_pred,
+            st.error(error)
 
-            target_names=CLASS_LABELS,
+        else:
 
-            output_dict=True,
+            st.success("File looks good: %d rows ready for evaluation." % len(X))
 
-            zero_division=0,
+ 
 
-        )
+            # ---------------------------------------------------------------
 
-        report_df = pd.DataFrame(report).T.round(4)
+            #  CASE 1: Compare ALL models side by side
 
-        st.dataframe(report_df, use_container_width=True)
+            # ---------------------------------------------------------------
+
+            if model_choice == "Compare all models":
+
+                st.subheader("Evaluation metrics for all models")
+
+ 
+
+                rows = []
+
+                for display_name, file_name in model_files.items():
+
+                    model = load_model(file_name)
+
+                    metrics, _ = compute_metrics(model, X, y)
+
+                    metrics_row = {"Model": display_name}
+
+                    metrics_row.update({k: round(v, 4) for k, v in metrics.items()})
+
+                    rows.append(metrics_row)
+
+ 
+
+                results_df = pd.DataFrame(rows).set_index("Model")
+
+                # FEATURE (c): display of evaluation metrics (every model).
+
+                st.dataframe(results_df, use_container_width=True)
+
+ 
+
+                best_model = results_df["MCC"].idxmax()
+
+                st.success("Best model on this data (by MCC): **%s**" % best_model)
+
+ 
+
+                # Graph: all six metrics compared across the five models.
+
+                st.subheader("Metrics comparison graph")
+
+                st.pyplot(plot_metrics_comparison(results_df))
+
+ 
+
+            # ---------------------------------------------------------------
+
+            #  CASE 2: Evaluate a SINGLE selected model
+
+            # ---------------------------------------------------------------
+
+            else:
+
+                file_name = model_files[model_choice]
+
+                model = load_model(file_name)
+
+                metrics, y_pred = compute_metrics(model, X, y)
+
+ 
+
+                st.subheader("Evaluation metrics - %s" % model_choice)
+
+ 
+
+                # FEATURE (c): six metric cards.
+
+                c1, c2, c3 = st.columns(3)
+
+                c1.metric("Accuracy", "%.4f" % metrics["Accuracy"])
+
+                c2.metric("AUC", "%.4f" % metrics["AUC"])
+
+                c3.metric("Precision", "%.4f" % metrics["Precision"])
+
+                c4, c5, c6 = st.columns(3)
+
+                c4.metric("Recall", "%.4f" % metrics["Recall"])
+
+                c5.metric("F1 Score", "%.4f" % metrics["F1"])
+
+                c6.metric("MCC", "%.4f" % metrics["MCC"])
+
+ 
+
+                # Graph: this model's six metrics as a bar chart.
+
+                st.subheader("Metrics graph - %s" % model_choice)
+
+                metric_series = pd.Series(
+
+                    {k: metrics[k] for k in
+
+                     ["Accuracy", "AUC", "Precision", "Recall", "F1", "MCC"]}
+
+                )
+
+                st.bar_chart(metric_series)
+
+ 
+
+                # FEATURE (d): confusion matrix AND classification report.
+
+                st.subheader("Confusion matrix and classification report")
+
+                left, right = st.columns(2)
+
+                with left:
+
+                    fig = plot_confusion_matrix(y, y_pred)
+
+                    st.pyplot(fig)
+
+                with right:
+
+                    report = classification_report(
+
+                        y, y_pred,
+
+                        target_names=CLASS_LABELS,
+
+                        output_dict=True,
+
+                        zero_division=0,
+
+                    )
+
+                    report_df = pd.DataFrame(report).T.round(4)
+
+                    st.dataframe(report_df, use_container_width=True)
+
+ 
+
+st.divider()
+
+ 
+
+# ======================= SECTION 2: DATASET & SAMPLE ========================
+
+st.header("\U0001F4CA Dataset & Sample")
+
+st.subheader("About the dataset - UCI Spambase")
+
+ 
+
+# Headline numbers shown as metric cards.
+
+d1, d2, d3, d4 = st.columns(4)
+
+d1.metric("Instances (rows)", "4,601")
+
+d2.metric("Features", "57")
+
+d3.metric("Classes", "2")
+
+d4.metric("Test rows provided", "921")
+
+ 
+
+st.write(
+
+    "Each row describes one e-mail using **57 numeric features**. The task "
+
+    "is to predict whether the e-mail is **spam (1)** or **not-spam (0)** - "
+
+    "a binary classification problem. The 57 features fall into three groups:"
+
+)
+
+ 
+
+# Feature-group breakdown table.
+
+groups_df = pd.DataFrame(
+
+    {
+
+        "Feature group": [
+
+            "word_freq_* (word frequencies)",
+
+            "char_freq_* (character frequencies)",
+
+            "capital_run_length_* (capital-letter runs)",
+
+            "Total features",
+
+        ],
+
+        "Count": [48, 6, 3, 57],
+
+        "Meaning": [
+
+            "% of words in the e-mail matching a given word (e.g. free, money)",
+
+            "% of characters matching a symbol ( ; ( [ ! $ # )",
+
+            "average / longest / total length of capital-letter runs",
+
+            "all input features combined",
+
+        ],
+
+    }
+
+)
+
+st.dataframe(groups_df, use_container_width=True, hide_index=True)
+
+ 
+
+st.divider()
+
+ 
+
+# ---- What a single data point looks like ------------------------------------
+
+st.subheader("What a single data point looks like")
+
+st.write(
+
+    "A data point is one e-mail: 57 feature values plus its true label. "
+
+    "Pick any row below to inspect all its feature values."
+
+)
+
+if sample_df is not None:
+
+    row_idx = st.number_input(
+
+        "Row number to inspect",
+
+        min_value=0, max_value=len(sample_df) - 1, value=0, step=1,
+
+    )
+
+    one_row = sample_df.iloc[int(row_idx)]
+
+    true_label = int(one_row[TARGET_COLUMN])
+
+    st.info("True label of this e-mail: **%s**" % CLASS_LABELS[true_label])
+
+    # Show the single data point as a readable "feature -> value" table.
+
+    point_df = one_row.drop(labels=[TARGET_COLUMN]).to_frame(name="value")
+
+    point_df.index.name = "feature"
+
+    st.dataframe(point_df, use_container_width=True, height=380)
+
+ 
+
+    st.subheader("Sample rows from the test data")
+
+    st.dataframe(sample_df.head(10), use_container_width=True)
+
+else:
+
+    st.warning("Sample data file (test_data.csv) was not found in the app.")
 
  
 
